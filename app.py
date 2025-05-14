@@ -5,6 +5,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Configure logging
@@ -16,9 +17,15 @@ class Base(DeclarativeBase):
 # Initialize SQLAlchemy with the model base class
 db = SQLAlchemy(model_class=Base)
 
+# Initialize CSRF protection
+csrf = CSRFProtect()
+
 # Create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev_secret_key")
+
+# Initialize CSRF protection
+csrf.init_app(app)
 
 # Configure the ProxyFix middleware
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # needed for url_for to generate with https
