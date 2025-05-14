@@ -329,7 +329,13 @@ def register_routes(app):
             # Parse the QR data
             try:
                 data = json.loads(scanned_data)
+                # Đảm bảo data là một dictionary và có khóa 'id'
+                if not isinstance(data, dict) or 'id' not in data:
+                    return jsonify({'success': False, 'message': 'Invalid QR code format'})
+                
                 student_id = data.get('id')
+                if student_id is None:
+                    return jsonify({'success': False, 'message': 'Student ID missing in QR code'})
                 
                 # Verify the student exists
                 student = Student.query.get(student_id)
