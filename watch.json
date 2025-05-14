@@ -1,0 +1,25 @@
+{
+  "install": {
+    "include": [
+      "^requirements\\.txt\\.glitch$",
+      "^package\\.json$",
+      "^\\.env$"
+    ],
+    "exclude": [
+      "^static/",
+      "^templates/"
+    ],
+    "exec": "bash start.sh"
+  },
+  "restart": {
+    "include": [
+      "\\.py$",
+      "^start\\.sh"
+    ],
+    "exclude": [
+      "^static/",
+      "^templates/"
+    ]
+  },
+  "throttle": 1000
+}
