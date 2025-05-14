@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Student Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+        <p class="text-muted">System overview and statistics</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card dashboard-card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <div class="card-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h2 class="display-4">{{ student_count }}</h2>
+                <p class="card-text">Students Registered</p>
+            </div>
+            <div class="card-footer bg-primary-dark border-0">
+                <a href="{{ url_for('students_list') }}" class="text-white text-decoration-none small">
+                    View All Students <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card dashboard-card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <div class="card-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <h2 class="display-4">{{ activity_count }}</h2>
+                <p class="card-text">Total Activities</p>
+            </div>
+            <div class="card-footer bg-success-dark border-0">
+                <a href="{{ url_for('activities_list') }}" class="text-white text-decoration-none small">
+                    View All Activities <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card dashboard-card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <div class="card-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h2 class="display-4">{{ attendance_count }}</h2>
+                <p class="card-text">Attendance Records</p>
+            </div>
+            <div class="card-footer bg-info-dark border-0">
+                <a href="{{ url_for('attendance_report') }}" class="text-white text-decoration-none small">
+                    View Reports <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Ongoing Activities -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-play-circle"></i> Ongoing Activities</h5>
+            </div>
+            <div class="card-body">
+                {% if ongoing_activities %}
+                <div class="list-group">
+                    {% for activity in ongoing_activities %}
+                    <a href="{{ url_for('take_attendance', activity_id=activity.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ activity.name }}</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ activity.location }}
+                            </small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">Take Attendance</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-times fa-4x text-muted"></i>
+                    </div>
+                    <p class="text-muted">No activities currently in progress</p>
+                    <a href="{{ url_for('add_activity') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Create Activity
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activities -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activities</h5>
+                <a href="{{ url_for('activities_list') }}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <div class="list-group">
+                    {% for activity in recent_activities %}
+                    <a href="{{ url_for('view_attendance', activity_id=activity.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ activity.name }}</h6>
+                            <small class="text-muted">
+                                {{ activity.start_time.strftime('%d %b, %Y') }}
+                            </small>
+                        </div>
+                        <p class="mb-1 small text-truncate">{{ activity.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ activity.location }}
+                            </small>
+                            <small class="badge bg-secondary">
+                                {% if activity.is_ongoing() %}
+                                In Progress
+                                {% elif activity.start_time > now %}
+                                Upcoming
+                                {% else %}
+                                Completed
+                                {% endif %}
+                            </small>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-times fa-4x text-muted"></i>
+                    </div>
+                    <p class="text-muted">No activities available</p>
+                    <a href="{{ url_for('add_activity') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Create Activity
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Chart -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Attendance Trends</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="daily-attendance-chart" 
+                            data-dates='{{ attendance_dates|safe }}' 
+                            data-counts='{{ attendance_counts|safe }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ student.full_name() }} - Student Profile{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-graduate"></i> Student Profile</h2>
+    <div>
+        <a href="{{ url_for('edit_student', id=student.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{{ url_for('students_list') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> All Students
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Student Information -->
+    <div class="col-lg-4">
+        <div class="card student-profile mb-4">
+            <div class="profile-header">
+                <div class="student-avatar">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3>{{ student.full_name() }}</h3>
+                <p class="mb-0">{{ student.student_id }}</p>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="fas fa-envelope me-2"></i> Email</span>
+                        <span>{{ student.email }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="fas fa-phone me-2"></i> Phone</span>
+                        <span>{{ student.phone or 'Not provided' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="fas fa-birthday-cake me-2"></i> Date of Birth</span>
+                        <span>{{ student.date_of_birth.strftime('%d %b, %Y') if student.date_of_birth else 'Not provided' }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="fas fa-calendar-plus me-2"></i> Registered On</span>
+                        <span>{{ student.created_at.strftime('%d %b, %Y') }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QR Code Section -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-qrcode"></i> Student QR Code</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="qr-container" id="qr-container-{{ student.id }}">
+                    <!-- QR code will be rendered here -->
+                </div>
+                
+                <div class="qr-buttons mt-3">
+                    <button class="btn btn-outline-primary" id="qr-mode-toggle-{{ student.id }}" data-mode="3d">
+                        Switch to 3D QR
+                    </button>
+                    <button class="btn btn-outline-secondary" id="qr-download-{{ student.id }}">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        This QR code contains encrypted student information for attendance tracking.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance History -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Attendance History</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if attendance %}
+                <div class="list-group list-group-flush attendance-list">
+                    {% for record in attendance %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ record.activity.name }}</h6>
+                            <small class="text-success">
+                                <i class="fas fa-check-circle"></i> Present
+                            </small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ record.activity.location }}
+                            </small>
+                            <small class="text-muted">
+                                {{ record.timestamp.strftime('%d %b, %Y %H:%M') }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-times fa-3x text-muted"></i>
+                    </div>
+                    <p class="text-muted">No attendance records found</p>
+                </div>
+                {% endif %}
+            </div>
+            {% if attendance %}
+            <div class="card-footer">
+                <small class="text-muted">Total: {{ attendance|length }} attendance records</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/qr_generator.js') }}"></script>
+{% endblock %}

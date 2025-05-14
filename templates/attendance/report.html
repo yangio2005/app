@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance Reports - Student Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-chart-bar"></i> Attendance Reports</h2>
+        <p class="text-muted">Generate and analyze attendance data across activities</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Search and Filters -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter"></i> Filter Options</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('attendance_report') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Activity</label>
+                        <select name="activity_id" class="form-select">
+                            <option value="">All Activities</option>
+                            {% for activity in activities %}
+                                <option value="{{ activity.id }}" {% if form.activity_id.data|string == activity.id|string %}selected{% endif %}>
+                                    {{ activity.name }} ({{ activity.start_time.strftime('%d %b, %Y') }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.student_id.label(class="form-label") }}
+                        {{ form.student_id(class="form-control", placeholder="Enter student ID") }}
+                        <div class="form-text">Leave empty to show all students</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.date_from.label(class="form-label") }}
+                        {{ form.date_from(class="form-control", type="date") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.date_to.label(class="form-label") }}
+                        {{ form.date_to(class="form-control", type="date") }}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Attendance Records</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportTableToCSV('report-table', 'attendance_report.csv')">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="report-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Activity</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if attendance_records %}
+                                {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ record.timestamp.strftime('%d %b, %Y %H:%M') }}</td>
+                                    <td>{{ record.student.student_id }}</td>
+                                    <td>{{ record.student.full_name() }}</td>
+                                    <td>{{ record.activity.name }}</td>
+                                    <td>{{ record.scanner.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="mb-3">
+                                            <i class="fas fa-search fa-3x text-muted"></i>
+                                        </div>
+                                        <p class="text-muted">No attendance records match your search criteria</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">Total records: {{ attendance_records|length }}</small>
+            </div>
+        </div>
+        
+        {% if attendance_records %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Attendance Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attendance-report-chart" 
+                            data-labels='{{ attendance_dates|default("[]")|safe }}' 
+                            data-values='{{ attendance_counts|default("[]")|safe }}'></canvas>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i> The chart shows attendance distribution based on your current filter settings.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Process attendance data for chart if needed
+    {% if attendance_records %}
+    // Group attendance by date for visualization
+    const attendanceByDate = {};
+    
+    {% for record in attendance_records %}
+    const recordDate = "{{ record.timestamp.strftime('%Y-%m-%d') }}";
+    if (!attendanceByDate[recordDate]) {
+        attendanceByDate[recordDate] = 0;
+    }
+    attendanceByDate[recordDate]++;
+    {% endfor %}
+    
+    // Convert to arrays for chart
+    const labels = Object.keys(attendanceByDate).sort();
+    const data = labels.map(date => attendanceByDate[date]);
+    
+    // Format dates for display
+    const formattedLabels = labels.map(dateStr => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString();
+    });
+    
+    // Create the chart
+    const attendanceCharts = new AttendanceCharts();
+    attendanceCharts.createAttendanceReportChart(
+        'attendance-report-chart',
+        formattedLabels,
+        data,
+        'Attendance Distribution by Date'
+    );
+    {% endif %}
+});
+</script>
+{% endblock %}

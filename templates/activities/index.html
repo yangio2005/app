@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block title %}Activities - Student Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-calendar-alt"></i> Activities</h2>
+        <p class="text-muted">Manage and track attendance for different activities</p>
+    </div>
+    <a href="{{ url_for('add_activity') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Activity
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">Activity List</h5>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" id="activity-search" class="form-control" placeholder="Search activities...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="activities-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if activities %}
+                        {% for activity in activities %}
+                        <tr>
+                            <td>{{ activity.name }}</td>
+                            <td>{{ activity.location or '-' }}</td>
+                            <td>{{ activity.start_time.strftime('%d %b, %Y %H:%M') }}</td>
+                            <td>{{ activity.end_time.strftime('%d %b, %Y %H:%M') }}</td>
+                            <td>
+                                {% if activity.is_ongoing() %}
+                                <span class="badge bg-success">In Progress</span>
+                                {% elif activity.start_time > now %}
+                                <span class="badge bg-info">Upcoming</span>
+                                {% elif not activity.is_active %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    {% if activity.is_ongoing() %}
+                                    <a href="{{ url_for('take_attendance', activity_id=activity.id) }}" class="btn btn-success" title="Take Attendance">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('view_attendance', activity_id=activity.id) }}" class="btn btn-info" title="View Attendance">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_activity', id=activity.id) }}" class="btn btn-primary" title="Edit Activity">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.is_admin %}
+                                    <button type="button" class="btn btn-danger" title="Delete Activity"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ activity.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if current_user.is_admin %}
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ activity.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete <strong>{{ activity.name }}</strong>?</p>
+                                                <p class="text-danger">This action cannot be undone and will remove all attendance records for this activity.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('delete_activity', id=activity.id) }}" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-calendar-times fa-3x text-muted"></i>
+                                </div>
+                                <p class="text-muted">No activities found</p>
+                                <a href="{{ url_for('add_activity') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> Add Activity
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Total: {{ activities|length }} activities</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="exportTableToCSV('activities-table', 'activities_list.csv')">
+                <i class="fas fa-download"></i> Export CSV
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize search functionality
+    searchTable('activity-search', 'activities-table');
+});
+</script>
+{% endblock %}

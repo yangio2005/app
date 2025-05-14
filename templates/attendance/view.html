@@ -1,0 +1,155 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance for {{ activity.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-clipboard-list"></i> Attendance Records</h2>
+        <p class="text-muted">{{ activity.name }} | {{ activity.start_time.strftime('%d %b, %Y %H:%M') }} - {{ activity.end_time.strftime('%H:%M') }}</p>
+    </div>
+    <div>
+        {% if activity.is_ongoing() %}
+        <a href="{{ url_for('take_attendance', activity_id=activity.id) }}" class="btn btn-success">
+            <i class="fas fa-clipboard-check"></i> Take Attendance
+        </a>
+        {% endif %}
+        <a href="{{ url_for('activities_list') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> All Activities
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-users"></i> Attendance List</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportTableToCSV('attendance-table', '{{ activity.name }}_attendance.csv')">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="attendance-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Time Recorded</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if attendance_records %}
+                                {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ record.student.student_id }}</td>
+                                    <td>{{ record.student.full_name() }}</td>
+                                    <td>{{ record.timestamp.strftime('%d %b, %Y %H:%M:%S') }}</td>
+                                    <td>{{ record.scanner.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="mb-3">
+                                            <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+                                        </div>
+                                        <p class="text-muted">No attendance records found for this activity</p>
+                                        {% if activity.is_ongoing() %}
+                                        <a href="{{ url_for('take_attendance', activity_id=activity.id) }}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-clipboard-check"></i> Take Attendance
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">Total records: {{ attendance_records|length }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Attendance Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="attendance-stats mb-4">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4>{{ total_students }}</h4>
+                            <small class="text-muted">Total Students</small>
+                        </div>
+                        <div class="col-4">
+                            <h4>{{ attended_count }}</h4>
+                            <small class="text-muted">Present</small>
+                        </div>
+                        <div class="col-4">
+                            <h4>{{ (attendance_rate|round(1))|string + '%' }}</h4>
+                            <small class="text-muted">Attendance Rate</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="attendance-pie-chart" 
+                            data-attended="{{ attended_count }}" 
+                            data-total="{{ total_students }}"></canvas>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <strong>Activity Details:</strong>
+                    <ul class="list-unstyled mt-2 mb-0">
+                        <li><i class="fas fa-map-marker-alt"></i> Location: {{ activity.location or 'Not specified' }}</li>
+                        <li><i class="fas fa-calendar-alt"></i> Date: {{ activity.start_time.strftime('%d %b, %Y') }}</li>
+                        <li><i class="fas fa-clock"></i> Time: {{ activity.start_time.strftime('%H:%M') }} - {{ activity.end_time.strftime('%H:%M') }}</li>
+                        <li><i class="fas fa-user"></i> Created by: {{ activity.creator.username }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if total_students > 0 and attended_count < total_students %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-user-times"></i> Absent Students</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set attended_ids = attendance_records|map(attribute='student_id')|list %}
+                    {% for student in students if student.id not in attended_ids %}
+                    <tr>
+                        <td>{{ student.student_id }}</td>
+                        <td>{{ student.full_name() }}</td>
+                        <td>{{ student.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

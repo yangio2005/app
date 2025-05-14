@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block title %}Student Management System - Welcome{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+        <div class="p-5 mb-4 bg-body-tertiary rounded-3">
+            <div class="container-fluid py-5">
+                <h1 class="display-5 fw-bold mb-4">
+                    <i class="fas fa-graduation-cap text-primary"></i> Student Management System
+                </h1>
+                <p class="fs-4">Efficiently manage students and track attendance with QR code technology</p>
+                <hr class="my-4">
+                <p class="lead">This system allows administrators to track attendance for various activities using 2D/3D QR codes.</p>
+                
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-sign-in-alt"></i> Login to System
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row g-4 py-5">
+            <div class="col-md-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h5 class="card-title">Student Management</h5>
+                        <p class="card-text">Maintain a comprehensive database of student information and profiles.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <h5 class="card-title">QR Code Attendance</h5>
+                        <p class="card-text">Generate and scan QR codes to quickly track attendance at any activity.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 dashboard-card">
+                    <div class="card-body text-center">
+                        <div class="card-icon text-primary">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h5 class="card-title">Attendance Reports</h5>
+                        <p class="card-text">Generate detailed reports and analytics for attendance patterns.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

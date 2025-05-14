@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+
+{% block title %}Students - Student Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-user-graduate"></i> Students</h2>
+        <p class="text-muted">Manage student information and QR codes</p>
+    </div>
+    <a href="{{ url_for('add_student') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Student
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">Student List</h5>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" id="student-search" class="form-control" placeholder="Search students...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="students-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if students %}
+                        {% for student in students %}
+                        <tr>
+                            <td>{{ student.student_id }}</td>
+                            <td>{{ student.full_name() }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>{{ student.phone or '-' }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('view_student', id=student.id) }}" class="btn btn-info" title="View Student">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('edit_student', id=student.id) }}" class="btn btn-primary" title="Edit Student">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.is_admin %}
+                                    <button type="button" class="btn btn-danger" title="Delete Student"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ student.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if current_user.is_admin %}
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ student.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Deletion</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to delete <strong>{{ student.full_name() }}</strong>?</p>
+                                                <p class="text-danger">This action cannot be undone and will remove all attendance records for this student.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('delete_student', id=student.id) }}" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-user-graduate fa-3x text-muted"></i>
+                                </div>
+                                <p class="text-muted">No students found</p>
+                                <a href="{{ url_for('add_student') }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> Add Student
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Total: {{ students|length }} students</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="exportTableToCSV('students-table', 'students_list.csv')">
+                <i class="fas fa-download"></i> Export CSV
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize search functionality
+    searchTable('student-search', 'students-table');
+});
+</script>
+{% endblock %}
